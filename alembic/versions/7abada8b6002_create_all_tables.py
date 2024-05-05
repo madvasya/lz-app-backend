@@ -41,7 +41,6 @@ def upgrade() -> None:
     sa.Column('email', sa.String(), nullable=False),
     sa.Column('full_name', sa.String(), nullable=False),
     sa.Column('hashed_password', sa.String(), nullable=False),
-    sa.Column('is_active', sa.Boolean(), nullable=False),
     sa.Column('is_superadmin', sa.Boolean(), nullable=False),
     sa.Column('created_on', sa.TIMESTAMP(timezone=True), nullable=False),
     sa.Column('edited_on', sa.TIMESTAMP(timezone=True), nullable=False),
@@ -73,21 +72,6 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('role_id', 'user_id')
     )
     # ### end Alembic commands ###
-    op.execute(
-        "INSERT INTO public.lz_permissions(description, permission_key) "
-        "VALUES ('allow reading user entities', 'user_read'),"
-        " ('allow updating user entities', 'user_update'),"
-        " ('allow reading role entities', 'role_read'),"
-        " ('allow editing role entities', 'role_update');"
-    )
-    # create superuser
-    op.execute(
-        "INSERT INTO public.lz_users(username, email, full_name, hashed_password,"
-        " is_active, is_superadmin, created_on, edited_on)"
-        " VALUES ('superadmin', 'su@iot.com', 'Head Admin',"
-        " '$2b$12$x3VLmHbAYcJ9bYcTqtVWTO3iBgBbA0tFlHbyHnYmILRMc4yzAUxGK', 'True',"
-        " 'True', '2004-10-19 10:23:54', '2004-10-19 10:23:54');"
-    )
 
 
 

@@ -7,6 +7,8 @@ from sqlalchemy.orm import relationship
 from sqlalchemy import ForeignKey, Table, Column, func
 from sqlalchemy.dialects.postgresql import UUID
 from app.database import Base
+from app.models.post import Post, PostComment
+from app.models.rehearsal import Rehearsal
 
 
 user_roles_table = Table(
@@ -37,9 +39,8 @@ class User(Base):
     email: Mapped[str] = mapped_column(unique=True)
     full_name: Mapped[str]
     hashed_password: Mapped[str]
-    is_active: Mapped[bool] = mapped_column(default=True)
+    penalty_points: Mapped[int] = mapped_column(default=0)
     is_superadmin: Mapped[bool] = mapped_column(default=False)
-    # superadmin может создавать урезанных su - админов песочниц
     created_on: Mapped[datetime.datetime] = mapped_column(
         nullable=False, default=func.CURRENT_TIMESTAMP()
     )
@@ -50,10 +51,22 @@ class User(Base):
     sessions: Mapped[list["UserSession"]] = relationship(
         back_populates="user", lazy="selectin", cascade="delete, delete-orphan"
     )
+    blocks: Mapped[list["UserBlock"]] = relationship(
+        back_populates="user", lazy="selectin", cascade="delete, delete-orphan"
+    )
     user_roles: Mapped[List["Role"]] = relationship(
         secondary=user_roles_table,
         back_populates="users_with_role",
         lazy="selectin",
+    )
+    rehearsals: Mapped[list["Rehearsal"]] = relationship(
+        back_populates="user", lazy="selectin", cascade="delete, delete-orphan"
+    )
+    posts: Mapped[list["Post"]] = relationship(
+        back_populates="user", lazy="selectin", cascade="delete, delete-orphan"
+    )
+    comments: Mapped[list["PostComment"]] = relationship(
+        back_populates="user", lazy="selectin", cascade="delete, delete-orphan"
     )
 
 
@@ -74,6 +87,28 @@ class UserSession(Base):
         nullable=False, default=func.CURRENT_TIMESTAMP()
     )
     is_active: Mapped[bool] = mapped_column(default=True)
+
+
+class UserBlock(Base):
+    __tablename__ = "lz_blocks"
+
+    uuid = Column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        nullable=False,
+        default=uuid_pkg.uuid4,
+    )
+    user_id: Mapped[int] = mapped_column(ForeignKey("lz_users.id"))
+    user: Mapped["User"] = relationship(
+        back_populates="blocks", lazy="selectin"
+    )
+    banned_on: Mapped[datetime.datetime] = mapped_column(
+        nullable=False, default=func.CURRENT_TIMESTAMP()
+    )
+    banned_till: Mapped[datetime.datetime] = mapped_column(
+        nullable=False
+    )
+    reason: Mapped[str]
 
 
 class Role(Base):
