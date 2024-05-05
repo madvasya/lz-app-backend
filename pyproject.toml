@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "app"
+version = "0.1.0"
+description = "backend part of SoundLabMephi booking app"
+authors = ["Vasily"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+fastapi = "^0.109.2"
+uvicorn = "^0.27.0.post1"
+pydantic = {extras = ["email"], version = "^2.6.1"}
+alembic = "^1.13.1"
+SQLAlchemy = "^2.0.25"
+asyncpg = "^0.29.0"
+passlib = {extras = ["bcrypt"], version = "^1.7.4"}
+python-jose = {extras = ["cryptography"], version = "^3.3.0"}
+python-multipart = "^0.0.9"
+pydantic-settings = "^2.2.1"
+
+[tool.poetry.group.dev.dependencies]
+flake8 = "^7.0.0"
+black = "^24.1.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
