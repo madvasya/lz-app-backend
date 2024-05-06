@@ -17,6 +17,7 @@ class Rehearsal(Base):
         back_populates="rehearsals", lazy="selectin"
     )
     start_time: Mapped[datetime.datetime] = mapped_column(nullable=False)
+    duration: Mapped[int] = mapped_column(nullable=False)
     band_name: Mapped[str] = mapped_column()
     rehearsal_participants: Mapped[List["RehearsalParticipant"]] = relationship(
         back_populates="rehearsal",
@@ -34,5 +35,4 @@ class RehearsalParticipant(Base):
     rehearsal: Mapped["Rehearsal"] = relationship(
         back_populates="rehearsal_participants", lazy="selectin"
     )
-    start_time: Mapped[datetime.datetime] = mapped_column(nullable=False)
-    band_name: Mapped[str] = mapped_column()
+    surname: Mapped[str] = mapped_column()
