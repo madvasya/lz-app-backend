@@ -1,3 +1,4 @@
+from datetime import datetime
 from fastapi import APIRouter, Query, HTTPException, Depends, Response
 from typing import Annotated, List
 from app.schemas.rehearsal import RehearsalRead, RehearsalCreate
@@ -22,10 +23,11 @@ async def get_all_rehearsals(
     #_: Annotated[bool, Depends(UserHasPermission("rehearsal_read"))],
     limit: Annotated[int | None, Query(ge=0)] = None,
     offset: Annotated[int | None, Query(ge=0)] = None,
-    order_list: str | None = None,
+    filter_from: datetime | None = None,
+    filter_to: datetime | None = None
 ) -> List[RehearsalRead]:
     rehearsals, count = await get_rehearsals_multi(
-        db_session, limit, offset, order_list
+        db_session, limit, offset, filter_from, filter_to
     )
     response.headers["X-Total-Count"] = str(count)
     return rehearsals

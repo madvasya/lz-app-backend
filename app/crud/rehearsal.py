@@ -1,4 +1,5 @@
 from fastapi import HTTPException
+from datetime import datetime, timezone
 from sqlalchemy import asc, desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.schemas.rehearsal import RehearsalCreate
@@ -21,31 +22,26 @@ async def get_rehearsals_multi(
     db_session: AsyncSession,
     limit: int,
     offset: int,
-    order_list: str,
+    filter_from: datetime = None,
+    filter_to: datetime = None
 ):
     select_stmt = select(RehearsalDBModel)
     count_stmt = select(func.count()).select_from(RehearsalDBModel)
-    if order_list is not None:
-        direction, sort_label = order_list.split("_", maxsplit=1)
-        if direction == "asc":
-            select_stmt = select_stmt.order_by(asc(sort_label))
-        elif direction == "desc":
-            select_stmt = select_stmt.order_by(desc(sort_label))
-        else:
-            raise HTTPException(
-                status_code=422,
-                detail=f"Unexpectable order prefix {direction}",
-            )
-
-    roles = (
+    if filter_from:
+        select_stmt = select_stmt.where(RehearsalDBModel.start_time > filter_from)
+    if filter_to:
+        select_stmt = select_stmt.where(RehearsalDBModel.start_time < filter_to)
+    rehearsals = (
         await db_session.scalars(select_stmt.limit(limit).offset(offset))
     ).all()
     count = (await db_session.scalars(count_stmt)).one()
-    return roles, count
+    return rehearsals, count
 
 async def create_rehearsal(
     db_session: AsyncSession, rehearsal: RehearsalCreate, user: UserDBModel
 ):
+    if rehearsal.start_time < datetime.now(timezone.utc):
+        raise HTTPException(status_code=422, detail="No way to book rehearsal in past")
     db_rehearsal = RehearsalDBModel(
         user_id=user.id,
         start_time=rehearsal.start_time,
