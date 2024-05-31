@@ -14,8 +14,8 @@ class Post(Base):
     )
     title: Mapped[str] = mapped_column()
     text: Mapped[str] = mapped_column()
-    likes: Mapped[str] = mapped_column(default=0)
-    dislikes: Mapped[str] = mapped_column(default=0)
+    likes: Mapped[int] = mapped_column(default=0)
+    dislikes: Mapped[int] = mapped_column(default=0)
     user_id: Mapped[int] = mapped_column(ForeignKey("lz_users.id"))
     user: Mapped["User"] = relationship(
         back_populates="posts", lazy="selectin"
@@ -47,5 +47,4 @@ class PostComment(Base):
     post: Mapped["Post"] = relationship(
         back_populates="post_comments", lazy="selectin"
     )
-    start_time: Mapped[datetime.datetime] = mapped_column(nullable=False)
-    band_name: Mapped[str] = mapped_column()
+    created_on: Mapped[datetime.datetime] = mapped_column(nullable=False, default=func.CURRENT_TIMESTAMP())

@@ -1,4 +1,6 @@
 from fastapi import APIRouter, HTTPException, Query, Depends, Response
+from app.crud.rehearsal import get_user_rehearsals
+from app.schemas.rehearsal import RehearsalRead
 from app.schemas.user import UserUpdatePassword, UserUpdate
 from app.schemas.user import UserRead, UserCreate, UserResetPassword
 from app.schemas.role import Role
@@ -202,3 +204,19 @@ async def get_all_user_roles(
         end = limit
     user = await get_user(db_session, user_id)
     return user.user_roles[offset:end]
+
+
+@router.get("/me/rehearsals")
+async def get_rehearsals_my(
+    db_session: DBSessionDep,
+    current_user: CurrentUserDep,
+    archive: bool,
+    response: Response,
+    limit: Annotated[int | None, Query(ge=0)] = None,
+    offset: Annotated[int | None, Query(ge=0)] = None,
+) -> List[RehearsalRead]:
+    rehearsals, count = await get_user_rehearsals(
+        db_session, current_user.id, archive, limit, offset, 
+    )
+    response.headers["X-Total-Count"] = str(count)
+    return rehearsals

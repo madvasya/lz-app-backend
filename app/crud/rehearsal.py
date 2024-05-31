@@ -1,5 +1,5 @@
 from fastapi import HTTPException
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from sqlalchemy import asc, desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.schemas.rehearsal import RehearsalCreate
@@ -29,8 +29,10 @@ async def get_rehearsals_multi(
     count_stmt = select(func.count()).select_from(RehearsalDBModel)
     if filter_from:
         select_stmt = select_stmt.where(RehearsalDBModel.start_time > filter_from)
+        count_stmt = count_stmt.where(RehearsalDBModel.start_time > filter_from)
     if filter_to:
         select_stmt = select_stmt.where(RehearsalDBModel.start_time < filter_to)
+        count_stmt = count_stmt.where(RehearsalDBModel.start_time < filter_to)
     rehearsals = (
         await db_session.scalars(select_stmt.limit(limit).offset(offset))
     ).all()
@@ -42,6 +44,10 @@ async def create_rehearsal(
 ):
     if rehearsal.start_time < datetime.now(timezone.utc):
         raise HTTPException(status_code=422, detail="No way to book rehearsal in past")
+    existing_rehearsals = await get_rehearsals_multi(db_session, None, None, rehearsal.start_time, rehearsal.start_time+timedelta(hours=rehearsal.duration))
+    if existing_rehearsals[0]:
+        print(existing_rehearsals[0])
+        raise HTTPException(status_code=409, detail="Выбранное время уже забронировано") 
     db_rehearsal = RehearsalDBModel(
         user_id=user.id,
         start_time=rehearsal.start_time,
@@ -66,3 +72,24 @@ async def create_rehearsal(
 async def delete_rehearsal(db_session: AsyncSession, rehearsal_id: int):
     rehearsal_to_delete = await get_rehearsal(db_session, rehearsal_id)
     await db_session.delete(rehearsal_to_delete)
+
+async def get_user_rehearsals(
+    db_session: AsyncSession,
+    user_id: int,
+    archive: bool,
+    limit: int,
+    offset: int
+):
+    select_stmt = select(RehearsalDBModel).where(RehearsalDBModel.user_id == user_id)
+    count_stmt = select(func.count()).select_from(RehearsalDBModel).where(RehearsalDBModel.user_id == user_id)
+    if archive:
+        select_stmt = select_stmt.where(RehearsalDBModel.start_time < datetime.now(timezone.utc))
+        count_stmt = count_stmt.where(RehearsalDBModel.start_time < datetime.now(timezone.utc))
+    else:
+        select_stmt = select_stmt.where(RehearsalDBModel.start_time >= datetime.now(timezone.utc))
+        count_stmt = count_stmt.where(RehearsalDBModel.start_time >= datetime.now(timezone.utc))
+    rehearsals = (
+        await db_session.scalars(select_stmt.limit(limit).offset(offset))
+    ).all()
+    count = (await db_session.scalars(count_stmt)).one()
+    return rehearsals, count
